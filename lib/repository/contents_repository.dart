@@ -1,4 +1,9 @@
-class ContentsRepository {
+import 'dart:convert';
+
+import 'package:carrot_sample/repository/local_storage_repository.dart';
+
+class ContentsRepository extends LocalStorageRepository {
+  final String MY_FAVORITE_STORE_KEY = "MY_FAVORITE_STORE_KEY";
   Map<String, dynamic> data = {
     "ara": [
       {
@@ -83,7 +88,7 @@ class ContentsRepository {
       },
     ],
     "ora": [
-      { 
+      {
         "cid": "11",
         "image": "assets/images/ora-1.jpg",
         "title": "LG 통돌이세탁기 15kg(내부",
@@ -147,7 +152,7 @@ class ContentsRepository {
         "price": "30000",
         "likes": "29"
       },
-      { 
+      {
         "cid": "19",
         "image": "assets/images/ora-9.jpg",
         "title": "한색책상책장수납장세트 팝니다.",
@@ -155,7 +160,7 @@ class ContentsRepository {
         "price": "1500000",
         "likes": "1"
       },
-      { 
+      {
         "cid": "20",
         "image": "assets/images/ora-10.jpg",
         "title": "순성 데일리 오가닉 카시트",
@@ -170,5 +175,55 @@ class ContentsRepository {
       String location) async {
     await Future.delayed(Duration(milliseconds: 1000));
     return data[location];
+  }
+
+  Future<List> loadFavoriteContents() async {
+    String jsonString = await this.getStoredValue(MY_FAVORITE_STORE_KEY);
+    if (jsonString != null) {
+      List<dynamic> json = jsonDecode(jsonString);
+      return json;
+    } else {
+      return [];
+    }
+  }
+
+  addMyFavoriteContent(Map<String, String> content) async {
+    List<dynamic> favoriteContentList = await loadFavoriteContents();
+    if (favoriteContentList == null || !(favoriteContentList is List)) {
+      favoriteContentList = [content];
+    } else {
+      favoriteContentList.add(content);
+    }
+    favoriteContentList.add(content);
+    updateFavoriteContent(favoriteContentList);
+  }
+
+  void updateFavoriteContent(List favoriteContentList) async {
+    await this
+        .storeValue(MY_FAVORITE_STORE_KEY, jsonEncode(favoriteContentList));
+  }
+
+  deleteMyFavoriteContent(String cid) async {
+    List<dynamic> favoriteContentList = await loadFavoriteContents();
+    if (favoriteContentList != null && favoriteContentList is List) {
+      favoriteContentList.removeWhere((data) => data["cid"].toString() == cid);
+    }
+    updateFavoriteContent(favoriteContentList);
+  }
+
+  Future<bool> isMyFavoriteContents(String cid) async {
+    bool isMyFavoriteContents = false;
+    List json = await loadFavoriteContents();
+    if (json == null || !(json is List)) {
+      return false;
+    } else {
+      for (dynamic data in json) {
+        if (data["cid"].toString() == cid) {
+          isMyFavoriteContents = true;
+          break;
+        }
+      }
+    }
+    return isMyFavoriteContents;
   }
 }
